@@ -234,3 +234,7 @@ def dashboard(user):
         max_bpm=randint(120, 140),
         avg_bpm=randint(70, 75),
     )
+
+@frontend.route('/home')
+def adrenaline_club_home():
+    return render_template('frontend/adrenaline_club/index.html')
