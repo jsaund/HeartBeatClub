@@ -1,76 +1,158 @@
 <html>
     <head>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.js"></script>
-        <script src="https://cdn.firebase.com/js/client/2.4.1/firebase.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore.js"></script>
-        <script src="https://code.highcharts.com/stock/highstock.js"></script>
-        <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
-
+        <script src="{{ url_for('static', filename='js/vendor/jquery-2.2.1.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/vendor/firebase-2.4.1.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/vendor/underscore-1.8.3.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/vendor/highstock-4.2.3.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/vendor/exporting-4.2.3.js') }}"></script>
     </head>
 
     <body>
         <div id="container" style="height: 400px; min-width: 310px"></div>
         <script>
+            // Use local time rather than UTC
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
+
             var username = "{{ user }}"
             var firebase = new Firebase('https://ryan.firebaseio.com/')
-            user = firebase.child('heart_rate/' + username)
-            user.once("value", function(snapshot) {
-                var hearBeatData = [];
+            getUserRef(username, 'data').once("value", function(snapshot) {
+                // Get all the heartbeat data
+                var data = [[], []]
                 snapshot.forEach(function(childSnapshot) {
                     var key = childSnapshot.key()
                     var value = childSnapshot.val()
-                    hearBeatData.push([parseInt(key), value])
-                });
-                makeChart(username, hearBeatData);
+                    data[0].push([parseInt(key), value])
+                })
+
+                // Get all the flag data
+                getUserRef(username, 'flags').once("value", function(snapshot) {
+                    snapshot.forEach(function(childSnapshot) {
+
+                        data[1].push(childSnapshot.val())
+                        console.log(data)
+                        // make the chart
+                    })
+                    makeChart(username, data)
+                })
+                // makeChart(username, data)
+
             }, function (errorObject) {
                 console.log("The read failed: " + errorObject.code)
             });
 
-            function getUserRef(name) {
-                return firebase.child('heart_rate/' + name)
-            }
-
             function makeChart(user, data) {
-                var ref = getUserRef(user);
+                // param: data - array of data for series
+                // param: user - string user key to use for firebase
+                var backDate = new Date()
+                backDate.setMinutes(-1)
                 $('#container').highcharts('StockChart', {
                     chart : {
                         events : {
                             load : function () {
-                                var series = this.series[0]
+                                var series = this.series
                                 var startKey = new Date().getTime().toString()
-                                ref.orderByKey().startAt(startKey).on("child_added", function(snapshot) {
-                                    var key = parseInt(snapshot.key());
-                                    var value = snapshot.val();
-                                    series.addPoint([key, value, true, true])
+                                getUserRef(user, 'data').orderByKey().startAt(startKey).on("child_added", function(snapshot) {
+                                    var key = parseInt(snapshot.key())
+                                    var value = snapshot.val()
+                                    series[0].addPoint([key, value, true, true])
+                                })
+                                getUserRef(user, 'flags').orderByKey().startAt(startKey).on("child_added", function(snapshot) {
+                                    var key = parseInt(snapshot.key())
+                                    var value = snapshot.val()
+                                    series[1].addPoint(value)
                                 })
                             }
                         }
                     },
 
-                    rangeSelector : {selected : 1},
+                    rangeSelector : {selected : 0},
 
                     title : {text : 'Heart Rate'},
+                    yAxis : {
+                        title : {
+                            text : 'BPM'
+                        }
+                    },
 
                     series : [{
                         name : 'Heart Rate',
-                        data : data,
+                        data : data[0],
+                        id: 'dataseries',
                         type: 'spline',
-                        tooltip: {
-                            valueDecimals: 2
+                    }, {
+                        type: 'flags',
+                        data: data[1],
+                        // data: [{
+                        //     text: 'asdf',
+                        //     title: 'asdf',
+                        //     x: 1456646495307
+                        // }],
+                        onSeries : 'dataseries',
+                        shape : 'circlepin',
+                        width : 30,
+                        events: {
+                            click: function(event) {
+                                // Go to the url for that flag
+                                window.location = event.point.url
+                            }
                         }
                     }]
                 })
             }
 
-            function insertData(user, fromDate, numEntries) {
-                var ref = getUserRef(user);
+            function getUserRef(name, key) {
+                var path = 'heart_rate/' + name
+                if (key) {
+                    path += '/' + key
+                }
+                return firebase.child(path)
+            }
+
+            function getRandomHeartBeat() {
+                return Math.floor(Math.random() * 80) + 60
+            }
+
+            function insertCoolData(user, fromDate, data) {
+                var fromDate = new Date(fromDate)
+                getUserRef(user, 'data').child(fromDate.getTime()).set(data)
+            }
+
+            function insertFlag(user, fromDate, data) {
+                /*
+                param: data is expected to look like:
+                {
+                    title: ...,
+                    text: ...,
+                    url: ...
+                }
+
+                What will get inserted is:
+                {
+                    title: ...,
+                    text: ...,
+                    url: ...,
+                    x: Date(...)
+                }
+                */
+                data['x'] = new Date(fromDate).getTime()
+                var fromDate = new Date(fromDate)
+                getUserRef(user, 'flags/' + data['x']).set(data)
+            }
+
+            function insertBulkData(user, fromDate, numEntries) {
+                var data = {}
+                var fromDate = new Date(fromDate)
                 for(var i = 0; i < numEntries; i++) { 
-                    ref.child(fromDate.getTime()).set(Math.floor(Math.random() * 80) + 60)
+                    data[fromDate.getTime()] = getRandomHeartBeat()
                     // Increase minutes by 1
                     fromDate.setMinutes(fromDate.getMinutes() + 1)
                 }
+                getUserRef(user, 'data').set(data)
             }
-
         </script>
     </body>
 </html>
