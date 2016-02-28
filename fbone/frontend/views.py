@@ -219,6 +219,6 @@ def help():
     return render_template('frontend/footers/help.html', active="help")
 
 
-@frontend.route('/test')
-def test():
-    return render_template('frontend/firebase/test.html')
+@frontend.route('/<user>/chart')
+def chart(user):
+    return render_template('frontend/firebase/chart.html', user=user)

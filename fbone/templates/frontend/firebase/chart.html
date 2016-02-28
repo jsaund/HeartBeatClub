@@ -11,22 +11,23 @@
     <body>
         <div id="container" style="height: 400px; min-width: 310px"></div>
         <script>
+            var username = "{{ user }}"
             var firebase = new Firebase('https://ryan.firebaseio.com/')
-            ryan = firebase.child('heart_rate/ryan')
-            ryan.once("value", function(snapshot) {
+            user = firebase.child('heart_rate/' + username)
+            user.once("value", function(snapshot) {
                 var hearBeatData = [];
                 snapshot.forEach(function(childSnapshot) {
                     var key = childSnapshot.key()
                     var value = childSnapshot.val()
                     hearBeatData.push([parseInt(key), value])
                 });
-                makeChart('ryan', hearBeatData);
+                makeChart(username, hearBeatData);
             }, function (errorObject) {
                 console.log("The read failed: " + errorObject.code)
             });
 
             function getUserRef(name) {
-                return ref = firebase.child('heart_rate/' + name)
+                return firebase.child('heart_rate/' + name)
             }
 
             function makeChart(user, data) {
@@ -35,13 +36,12 @@
                     chart : {
                         events : {
                             load : function () {
-                                // set up the updating of the chart
                                 var series = this.series[0]
                                 var startKey = new Date().getTime().toString()
                                 ref.orderByKey().startAt(startKey).on("child_added", function(snapshot) {
-                                        var key = parseInt(snapshot.key());
-                                        var value = snapshot.val();
-                                        series.addPoint([key, value, true, true])
+                                    var key = parseInt(snapshot.key());
+                                    var value = snapshot.val();
+                                    series.addPoint([key, value, true, true])
                                 })
                             }
                         }
@@ -65,8 +65,8 @@
             function insertData(user, fromDate, numEntries) {
                 var ref = getUserRef(user);
                 for(var i = 0; i < numEntries; i++) { 
-                    // Increase seconds by 1
                     ref.child(fromDate.getTime()).set(Math.floor(Math.random() * 80) + 60)
+                    // Increase minutes by 1
                     fromDate.setMinutes(fromDate.getMinutes() + 1)
                 }
             }
