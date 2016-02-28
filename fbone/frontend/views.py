@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from random import randint
 from uuid import uuid4
 
 from flask import (Blueprint, render_template, current_app, request,
@@ -222,3 +223,14 @@ def help():
 @frontend.route('/<user>/chart')
 def chart(user):
     return render_template('frontend/firebase/chart.html', user=user)
+
+
+@frontend.route('/<user>/dashboard')
+def dashboard(user):
+    return render_template(
+        'frontend/dashboard/index.html',
+        user=user,
+        min_bpm=randint(50, 55),
+        max_bpm=randint(120, 140),
+        avg_bpm=randint(70, 75),
+    )
