@@ -21,7 +21,6 @@ import org.json.JSONException;
 public class MainActivity extends WearableActivity {
   private static final String TAG = "Wearable";
   private static final String KEY_HEART_RATE = "heart_rate";
-  private static final String KEY_EMOTION = "emotion";
 
 
   private TextView mHeartRate;
@@ -60,7 +59,7 @@ public class MainActivity extends WearableActivity {
       @Override
       public void onClick(View v) {
         try {
-          shareEmotion(Emotion.EMOTION_EXCITED);
+          shareEmotion(Emotion.EMOTION_EXCITED, Integer.valueOf(mHeartRate.getText().toString()));
         } catch (JSONException ignore) {
         }
       }
@@ -89,7 +88,7 @@ public class MainActivity extends WearableActivity {
     Wearable.DataApi.putDataItem(mGoogleApiClient, req);
   }
 
-  private void shareEmotion(int emotion) throws JSONException {
+  private void shareEmotion(int emotion, int heartRate) throws JSONException {
     final Emotion e = new Emotion(emotion, "Feeling excited @LAUNCH", "", System.currentTimeMillis());
     final String childName = "/heart_rate/jag/flags/" + System.currentTimeMillis();
     PutDataMapRequest data = PutDataMapRequest.create(childName);
@@ -97,6 +96,7 @@ public class MainActivity extends WearableActivity {
     data.getDataMap().putString("title", Emotion.toAsciiEmoji(emotion));
     data.getDataMap().putString("text", "Feeling excited @LAUNCH");
     data.getDataMap().putString("url", "");
+    data.getDataMap().putInt("heart_rate", heartRate);
 
     PutDataRequest req = data.asPutDataRequest();
     Wearable.DataApi.putDataItem(mGoogleApiClient, req);

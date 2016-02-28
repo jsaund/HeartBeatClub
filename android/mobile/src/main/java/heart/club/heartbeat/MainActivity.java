@@ -1,5 +1,6 @@
 package heart.club.heartbeat;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -17,10 +18,19 @@ import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.Wearable;
+import com.twitter.sdk.android.Twitter;
+import com.twitter.sdk.android.core.TwitterAuthConfig;
+import com.twitter.sdk.android.tweetcomposer.TweetComposer;
+import io.fabric.sdk.android.Fabric;
 
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements DataApi.DataListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+
+    // Note: Your consumer key and secret should be obfuscated in your source code before shipping.
+    private static final String TWITTER_KEY = "r7KODuasYuBzQle7opCBf0a4t";
+    private static final String TWITTER_SECRET = "E9j6sELkGfsKj8AfexMlX1qfFzHVxVhN7feaRyPqX0affi71j8";
+
   private static final String TAG = "Adrenaline";
   private static final String FIREBASE_DB_URL = "https://ryan.firebaseio.com";
   private Firebase mFirebaseRef;
@@ -29,6 +39,8 @@ public class MainActivity extends AppCompatActivity implements DataApi.DataListe
 
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY, TWITTER_SECRET);
+    Fabric.with(this, new Twitter(authConfig));
     setContentView(R.layout.activity_main);
     Firebase.setAndroidContext(this);
     mFirebaseRef = new Firebase(FIREBASE_DB_URL);
@@ -74,8 +86,9 @@ public class MainActivity extends AppCompatActivity implements DataApi.DataListe
           final String text = dataMap.getString("text");
           final String url = dataMap.getString("url");
           final long x = dataMap.getLong("x");
+          final int heartRate = dataMap.getInt("heart_rate");
           final Emotion e = new Emotion(title, text, url, x);
-          sendShare(childName, e);
+          sendShare(childName, e, heartRate);
         } else {
           sendHeartRate(childName, (int) dataMap.get("heart_rate"));
         }
@@ -83,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements DataApi.DataListe
     }
   }
 
-  private void sendShare(String child, Emotion data) {
+  private void sendShare(String child, Emotion data, int heartRate) {
     mFirebaseRef.child(child).setValue(data, new Firebase.CompletionListener() {
       @Override
       public void onComplete(FirebaseError firebaseError, Firebase firebase) {
@@ -94,6 +107,10 @@ public class MainActivity extends AppCompatActivity implements DataApi.DataListe
         }
       }
     });
+    final Uri uri = Uri.parse(String.format("http://104.197.44.2/img/HB%d.gif", heartRate));
+    TweetComposer.Builder builder = new TweetComposer.Builder(this)
+      .text(data.title + " " + data.text + " " + uri.toString());
+    builder.show();
   }
 
   private void sendHeartRate(String child, int heartRate) {
