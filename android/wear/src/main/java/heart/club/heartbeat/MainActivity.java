@@ -7,14 +7,15 @@ import android.hardware.SensorEventListener2;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.wearable.activity.WearableActivity;
-import android.support.wearable.view.BoxInsetLayout;
 import android.util.Log;
 import android.widget.TextView;
 
 public class MainActivity extends WearableActivity {
 
-  private BoxInsetLayout mContainerView;
   private TextView mHeartRate;
+  private SensorManager mSensorManager;
+  private Sensor mHeartRateSensor;
+  private SensorEventListener2 mHeartRateListener;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -22,40 +23,30 @@ public class MainActivity extends WearableActivity {
     setContentView(R.layout.activity_main);
     setAmbientEnabled();
 
-    final SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-    final Sensor heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
-    sensorManager.registerListener(new HeartRateSensorListener(), heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
-
-    mContainerView = (BoxInsetLayout) findViewById(R.id.container);
+    mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+    mHeartRateSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
     mHeartRate = (TextView) findViewById(R.id.heart_rate);
   }
 
   @Override
-  public void onEnterAmbient(Bundle ambientDetails) {
-    super.onEnterAmbient(ambientDetails);
-    updateDisplay();
+  protected void onResume() {
+    super.onResume();
+    registerHeartRateListener();
   }
 
   @Override
-  public void onUpdateAmbient() {
-    super.onUpdateAmbient();
-    updateDisplay();
+  protected void onPause() {
+    super.onPause();
+    unregisterHeartRateListener();
   }
 
-  @Override
-  public void onExitAmbient() {
-    updateDisplay();
-    super.onExitAmbient();
+  private void registerHeartRateListener() {
+    mHeartRateListener = new HeartRateSensorListener();
+    mSensorManager.registerListener(mHeartRateListener, mHeartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
   }
 
-  private void updateDisplay() {
-    if (isAmbient()) {
-      mContainerView.setBackgroundColor(getResources().getColor(android.R.color.black));
-      mHeartRate.setTextColor(getResources().getColor(android.R.color.white));
-    } else {
-      mContainerView.setBackground(null);
-      mHeartRate.setTextColor(getResources().getColor(android.R.color.black));
-    }
+  private void unregisterHeartRateListener() {
+    mSensorManager.unregisterListener(mHeartRateListener);
   }
 
   private class HeartRateSensorListener implements SensorEventListener2 {
@@ -64,7 +55,12 @@ public class MainActivity extends WearableActivity {
     @Override
     public void onSensorChanged(SensorEvent event) {
       if (event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
-        final float heartRate = event.values[0];
+        final int accuracy = event.accuracy;
+        if (accuracy > 1) {
+          mHeartRate.setText("Reading...");
+          return;
+        }
+        final int heartRate = (int) event.values[0];
         mHeartRate.setText(String.valueOf(heartRate));
         Log.d(TAG, "Heart rate: " + heartRate);
       }
