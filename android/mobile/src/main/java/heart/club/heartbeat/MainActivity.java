@@ -1,5 +1,6 @@
 package heart.club.heartbeat;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -109,11 +110,13 @@ public class MainActivity extends AppCompatActivity implements DataApi.DataListe
       }
     });
 
-    String heartBeatUrl = String.format("http://img.translateit.io/img/HB%d.gif", heartRate);
+    Uri uri = Uri.parse(String.format("android.resource://heart.club.heartbeat/raw/hb%d", heartRate));
+    String dashboardUrl = "http://theadrenaline.club/jag/dashboard";
     TweetComposer.Builder builder = null;
     try {
       builder = new TweetComposer.Builder(this)
-        .url(new URL(heartBeatUrl))
+        .image(uri)
+        .url(new URL(dashboardUrl))
         .text(data.title + " " + data.text);
       builder.show();
     } catch (MalformedURLException ignore) {
