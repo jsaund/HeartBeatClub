@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.wearable.view.BoxInsetLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,10 +9,13 @@
     tools:context="heart.club.heartbeat.MainActivity"
     tools:deviceIds="wear">
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_box="all">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_gravity="center">
         <TextView
             android:id="@+id/heart_rate"
             android:layout_width="wrap_content"
@@ -22,15 +24,22 @@
             android:textSize="48sp"
             android:textStyle="bold"
             android:layout_gravity="center"/>
-
         <TextView
-            android:id="@+id/debug"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:text="..."
-            android:textSize="12sp"
-            android:textColor="@color/white"/>
-    </FrameLayout>
+            android:layout_marginStart="12dp"
+            android:textColor="@color/heart_rate"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:text="bpm"
+            android:layout_gravity="center"/>
+    </LinearLayout>
 
-</android.support.wearable.view.BoxInsetLayout>
+    <Button
+        android:id="@+id/share"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:gravity="center"
+        android:layout_gravity="bottom"
+        android:text="Share"/>
+</FrameLayout>

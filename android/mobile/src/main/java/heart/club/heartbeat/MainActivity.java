@@ -62,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements DataApi.DataListe
     }
     final List<DataEvent> events = FreezableUtils.freezeIterable(dataEvents);
 
-
     // Loop through the events and send a message
     // to the node that created the data item.
     for (DataEvent event : events) {
@@ -70,9 +69,31 @@ public class MainActivity extends AppCompatActivity implements DataApi.DataListe
         final DataItem item = event.getDataItem();
         final String childName = item.getUri().getPath().substring(1);
         DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
-        sendHeartRate(childName,(int) dataMap.get("heart_rate"));
+        if (childName.contains("flags")) {
+          final String title = dataMap.getString("title");
+          final String text = dataMap.getString("text");
+          final String url = dataMap.getString("url");
+          final long x = dataMap.getLong("x");
+          final Emotion e = new Emotion(title, text, url, x);
+          sendShare(childName, e);
+        } else {
+          sendHeartRate(childName, (int) dataMap.get("heart_rate"));
+        }
       }
     }
+  }
+
+  private void sendShare(String child, Emotion data) {
+    mFirebaseRef.child(child).setValue(data, new Firebase.CompletionListener() {
+      @Override
+      public void onComplete(FirebaseError firebaseError, Firebase firebase) {
+        if (firebaseError != null) {
+          Log.d(TAG, "Firebase error: " + firebaseError.getMessage());
+        } else {
+          Log.d(TAG, "Firebase: sent data");
+        }
+      }
+    });
   }
 
   private void sendHeartRate(String child, int heartRate) {

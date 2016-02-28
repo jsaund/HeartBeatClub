@@ -2,4 +2,5 @@
 <resources>
     <color name="reading">#848484</color>
     <color name="heart_rate">#f50057</color>
+    <color name="heart_rate_light">#e65186</color>
 </resources>
