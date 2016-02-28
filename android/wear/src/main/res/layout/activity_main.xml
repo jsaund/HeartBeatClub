@@ -18,10 +18,19 @@
             android:id="@+id/heart_rate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#f50057"
+            android:textColor="@color/heart_rate"
             android:textSize="48sp"
             android:textStyle="bold"
             android:layout_gravity="center"/>
+
+        <TextView
+            android:id="@+id/debug"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:text="..."
+            android:textSize="12sp"
+            android:textColor="@color/white"/>
     </FrameLayout>
 
 </android.support.wearable.view.BoxInsetLayout>
