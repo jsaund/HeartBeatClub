@@ -1,6 +1,5 @@
 package heart.club.heartbeat;
 
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -23,6 +22,8 @@ import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.tweetcomposer.TweetComposer;
 import io.fabric.sdk.android.Fabric;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements DataApi.DataListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
@@ -107,10 +108,16 @@ public class MainActivity extends AppCompatActivity implements DataApi.DataListe
         }
       }
     });
-    final Uri uri = Uri.parse(String.format("http://104.197.44.2/img/HB%d.gif", heartRate));
-    TweetComposer.Builder builder = new TweetComposer.Builder(this)
-      .text(data.title + " " + data.text + " " + uri.toString());
-    builder.show();
+
+    String heartBeatUrl = String.format("http://104.197.44.2/img/HB%d.gif", heartRate);
+    TweetComposer.Builder builder = null;
+    try {
+      builder = new TweetComposer.Builder(this)
+        .url(new URL(heartBeatUrl))
+        .text(data.title + " " + data.text);
+      builder.show();
+    } catch (MalformedURLException ignore) {
+    }
   }
 
   private void sendHeartRate(String child, int heartRate) {
