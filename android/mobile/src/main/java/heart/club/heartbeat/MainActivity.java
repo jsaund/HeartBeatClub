@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity implements DataApi.DataListe
       }
     });
 
-    String heartBeatUrl = String.format("http://104.197.44.2/img/HB%d.gif", heartRate);
+    String heartBeatUrl = String.format("http://img.translateit.io/img/HB%d.gif", heartRate);
     TweetComposer.Builder builder = null;
     try {
       builder = new TweetComposer.Builder(this)
