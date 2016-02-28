@@ -17,9 +17,45 @@
                 }
             });
 
+            // Mock time series data
+            var jackData = [75, 75, 74, 76, 75, 76, 77, 78, 79, 80, 81, 81, 81, 81, 81, 82, 81, 81, 80, 79, 78, 77, 77, 77, 76, 75, 74, 74, 74, 74, 73, 73, 72, 71, 72, 73, 73, 74, 74, 74, 74, 75, 76, 76, 76, 76, 77, 78, 78, 78, 78, 77, 79, 80, 81, 81, 80, 79, 78, 77, 77, 77, 76]
+
+            function generateMockData() {
+                var mockData = [[], []]
+                mockData[0] = _.map(_.range(jackData.length), function(i) {
+                    var tempDate = new Date()
+                    return [tempDate.setSeconds(tempDate.getSeconds() - jackData.length + i + 1), jackData[i]]
+                })
+                mockData[1] = [{
+                    title: ':)',
+                    text: 'Having fun at @LAUNCH!',
+                    x: mockData[0][mockData[0].length - 1][0],
+                    url: 'http://launchhackathon.com'
+                }]
+                return mockData
+            }
+
+            function updateMockData(series) {
+                // Mock data in case the internet dies
+                var i = 0;
+                var interval = setInterval(function () {
+                    var x = (new Date()).getTime()
+                    var y = jackData[i]
+                    series.addPoint([x, y, true, true])
+                    if(++i >= jackData.length) {
+                        window.clearInterval(interval)
+                    }
+                }, 1000)
+            }
+
             var username = "{{ user }}"
             var firebase = new Firebase('https://ryan.firebaseio.com/')
             getUserRef(username, 'data').once("value", function(snapshot) {
+                if (username == 'jack') {
+                    // Mock data in case internet breaks
+                    return makeChart('jack', generateMockData()) // early out here
+                }
+
                 // Get all the heartbeat data
                 var data = [[], []]
                 snapshot.forEach(function(childSnapshot) {
@@ -32,7 +68,11 @@
                 getUserRef(username, 'flags').once("value", function(snapshot) {
                     snapshot.forEach(function(childSnapshot) {
 
-                        data[1].push(childSnapshot.val())
+                        var value = childSnapshot.val()
+                        if (typeof value === 'string') {
+                            value = JSON.parse(value)
+                        }
+                        data[1].push(value);
                         console.log(data)
                         // make the chart
                     })
@@ -54,6 +94,12 @@
                         events : {
                             load : function () {
                                 var series = this.series
+
+                                if (user === 'jack') {
+                                    // Mock data in case internet breaks
+                                    return updateMockData(series[0]) // early out here
+                                }
+
                                 var startKey = new Date().getTime().toString()
                                 getUserRef(user, 'data').orderByKey().startAt(startKey).on("child_added", function(snapshot) {
                                     var key = parseInt(snapshot.key())
@@ -125,17 +171,17 @@
                 /*
                 param: data is expected to look like:
                 {
-                    title: ...,
-                    text: ...,
+                    title: <ASCII emoji>,
+                    text: <whatever longer description you want>,
                     url: ...
                 }
 
                 What will get inserted is:
                 {
-                    title: ...,
-                    text: ...,
+                    title: <ASCII emoji>,
+                    text: <whatever longer description you want>,
                     url: ...,
-                    x: Date(...)
+                    x: <unix time in ms>
                 }
                 */
                 data['x'] = new Date(fromDate).getTime()
