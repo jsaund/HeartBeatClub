@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask import Blueprint, current_app, request, jsonify
+from flask import Blueprint, current_app, request, jsonify, current_app
 from flask.ext.login import login_user, current_user, logout_user
 
 from ..user import User
@@ -31,3 +31,8 @@ def logout():
     if current_user.is_authenticated:
         logout_user()
     return jsonify(flag='success', msg='Logouted.')
+
+
+@api.route('/<user>')
+def user_data(user):
+    return current_app.send_static_file('json/%s.json' % user)
